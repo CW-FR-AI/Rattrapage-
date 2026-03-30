@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulateur complet — Rattrapage d'impôt 2025</title>
+  <style>
+    :root {
+      --primary: #000091;
+      --primary-light: #e3e3fd;
+      --accent: #ce614a;
+      --green: #18753c;
+      --green-light: #b8fec9;
+      --red: #ce0500;
+      --red-light: #ffe9e6;
+      --bg: #f6f6f6;
+      --card: #ffffff;
+      --text: #161616;
+      --text-light: #666666;
+      --border: #dddddd;
+      --radius: 10px;
+      --orange: #e67e22;
+      --orange-light: #fef5e7;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 28px 0;
+      text-align: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    header p { margin-top: 6px; font-size: 0.92rem; opacity: 0.8; }
+    .container { max-width: 760px; margin: 0 auto; padding: 28px 20px 60px; }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px 26px 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border: 1px solid var(--border);
+    }
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 18px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--primary-light);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title .icon { font-size: 1.1rem; }
+
+    /* Form elements */
+    .form-group { margin-bottom: 16px; }
+    .form-row { display: flex; gap: 16px; }
+    .form-row > .form-group { flex: 1; }
+    label {
+      display: block;
+      font-size: 0.86rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    label .hint { font-weight: 400; color: var(--text-light); font-size: 0.8rem; }
+    input[type="number"], select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    input[type="number"] { -moz-appearance: textfield; }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    select { cursor: pointer; background: white; }
+
+    /* Radio group */
+    .radio-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+    .radio-option {
+      display: flex; align-items: center; gap: 7px;
+      cursor: pointer; font-weight: 500; font-size: 0.88rem;
+      padding: 9px 14px; border: 2px solid var(--border);
+      border-radius: 8px; transition: all 0.2s; flex: 1; justify-content: center;
+      min-width: 120px;
+    }
+    .radio-option:has(input:checked) {
+      border-color: var(--primary); background: var(--primary-light);
+    }
+    .radio-option input[type="radio"] { display: none; }
+    .radio-custom {
+      width: 16px; height: 16px; border: 2px solid var(--border);
+      border-radius: 50%; position: relative; flex-shrink: 0;
+    }
+    .radio-option:has(input:checked) .radio-custom { border-color: var(--primary); }
+    .radio-option:has(input:checked) .radio-custom::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 8px; height: 8px; background: var(--primary); border-radius: 50%;
+    }
+
+    /* Toggle */
+    .toggle-section {
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer; user-select: none; margin-bottom: 12px;
+    }
+    .toggle {
+      position: relative; width: 44px; height: 24px;
+      background: var(--border); border-radius: 12px;
+      transition: background 0.25s; flex-shrink: 0;
+    }
+    .toggle::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 20px; height: 20px; background: white;
+      border-radius: 50%; transition: transform 0.25s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .toggle.active { background: var(--primary); }
+    .toggle.active::after { transform: translateX(20px); }
+    .toggle-label { font-size: 0.88rem; font-weight: 600; }
+
+    .collapsible { display: none; padding: 14px; background: #f8f9ff; border-radius: 8px; margin-top: 8px; }
+    .collapsible.visible { display: block; }
+
+    .info-box {
+      padding: 10px 14px; border-radius: 6px; font-size: 0.82rem;
+      margin-bottom: 14px; border-left: 3px solid;
+    }
+    .info-box.blue { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+    .info-box.orange { background: var(--orange-light); border-color: var(--orange); color: #7d5a29; }
+
+    /* Conjoint section */
+    .conjoint-fields { display: none; }
+    .conjoint-fields.visible { display: block; }
+
+    /* Button */
+    .btn {
+      display: block; width: 100%; padding: 14px;
+      background: var(--primary); color: white; border: none;
+      border-radius: 8px; font-size: 1.05rem; font-weight: 700;
+      cursor: pointer; transition: background 0.2s; letter-spacing: 0.2px;
+    }
+    .btn:hover { background: #00006d; }
+
+    /* Results */
+    .results { display: none; }
+    .results.visible { display: block; }
+    .result-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid #eee; font-size: 0.9rem;
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-row .lbl { color: var(--text-light); }
+    .result-row .val { font-weight: 700; font-size: 0.95rem; }
+    .result-row.subtotal { background: #f8f8f8; padding: 10px 8px; border-radius: 4px; margin: 4px -8px; }
+    .result-row.subtotal .lbl { font-weight: 600; color: var(--text); }
+
+    .result-main {
+      margin-top: 16px; padding: 20px; border-radius: 8px; text-align: center;
+    }
+    .result-main.refund { background: var(--green-light); border: 1px solid var(--green); }
+    .result-main.due { background: var(--red-light); border: 1px solid var(--red); }
+    .result-main .result-label { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+    .result-main.refund .result-label { color: var(--green); }
+    .result-main.due .result-label { color: var(--red); }
+    .result-main .result-amount { font-size: 1.8rem; font-weight: 800; }
+    .result-main.refund .result-amount { color: var(--green); }
+    .result-main.due .result-amount { color: var(--red); }
+    .result-monthly {
+      margin-top: 8px; font-size: 0.85rem; color: var(--text-light);
+    }
+
+    .bareme-table {
+      width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px;
+    }
+    .bareme-table th {
+      background: var(--primary); color: white; padding: 8px 10px;
+      text-align: left; font-weight: 600;
+    }
+    .bareme-table th:last-child { text-align: right; }
+    .bareme-table td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+    .bareme-table td:last-child { text-align: right; font-weight: 600; }
+    .bareme-table tr:nth-child(even) { background: #fafafa; }
+    .bareme-table tr.active-tranche { background: var(--primary-light); }
+
+    .parts-detail {
+      display: inline-block; padding: 4px 12px; background: var(--primary-light);
+      border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+      color: var(--primary); margin-bottom: 12px;
+    }
+
+    footer {
+      text-align: center; padding: 20px; font-size: 0.8rem; color: var(--text-light);
+    }
+
+    @media (max-width: 600px) {
+      .form-row { flex-direction: column; gap: 0; }
+      .radio-group { flex-direction: column; }
+      .radio-option { min-width: unset; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Simulateur complet — Rattrapage d'impôt</h1>
+  <p>Barème progressif 2025 — Tous paramètres inclus pour provisionnement</p>
+</header>
+
+<div class="container">
+
+  <!-- 1. SITUATION FAMILIALE -->
+  <div class="card">
+    <div class="card-title"><span class="icon">1</span> Situation familiale</div>
+
+    <div class="form-group">
+      <label>Situation matrimoniale</label>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="situation" value="celibataire" checked onchange="onSituationChange()">
+          <span class="radio-custom"></span><span>Célibataire</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="situation" value="marie" onchange="onSituationChange()">
+          <span class="radio-custom"></span><span>Marié / Pacsé</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="situation" value="divorce" onchange="onSituationChange()">
+          <span class="radio-custom"></span><span>Divorcé</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="situation" value="veuf" onchange="onSituationChange()">
+          <span class="radio-custom"></span><span>Veuf(ve)</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="nbEnfants">Enfants à charge</label>
+        <select id="nbEnfants" onchange="onSituationChange()">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6+</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="nbEnfantsAlternee">dont en garde alternée</label>
+        <select id="nbEnfantsAlternee">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Statut professionnel</label>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="statut" value="non-cadre" checked>
+          <span class="radio-custom"></span><span>Non-cadre</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="statut" value="cadre">
+          <span class="radio-custom"></span><span>Cadre</span>
+        </label>
+      </div>
+    </div>
+
+    <div id="partsDisplay" class="parts-detail">1 part fiscale</div>
+  </div>
+
+  <!-- 2. REVENUS -->
+  <div class="card">
+    <div class="card-title"><span class="icon">2</span> Revenus</div>
+
+    <div class="form-group">
+      <label for="revenu1">Votre revenu net fiscal annuel <span class="hint">(cumul net imposable, fiche de paie décembre, avant abattement 10%)</span></label>
+      <input type="number" id="revenu1" placeholder="Ex : 42 000" step="1" min="0">
+    </div>
+
+    <div class="conjoint-fields" id="conjointFields">
+      <div class="form-group">
+        <label for="revenu2">Revenu net fiscal du conjoint <span class="hint">(même logique, avant abattement 10%)</span></label>
+        <input type="number" id="revenu2" placeholder="Ex : 28 000" step="1" min="0">
+      </div>
+    </div>
+
+    <div class="info-box blue">
+      L'abattement forfaitaire de <strong>10%</strong> est appliqué automatiquement sur chaque revenu (plancher 504 €, plafond 14 426 € par personne).
+    </div>
+  </div>
+
+  <!-- 3. PRELEVEMENTS -->
+  <div class="card">
+    <div class="card-title"><span class="icon">3</span> Prélèvements déjà effectués</div>
+
+    <div class="form-group">
+      <label for="preleve">Total prélevé à la source sur l'année <span class="hint">(votre cumul + conjoint si applicable)</span></label>
+      <input type="number" id="preleve" placeholder="Ex : 5 400" step="1" min="0">
+    </div>
+
+    <div class="form-group">
+      <label for="avanceCredits">Avance de crédits d'impôt reçue en janvier <span class="hint">(versement de 60% des crédits récurrents)</span></label>
+      <input type="number" id="avanceCredits" placeholder="0" step="1" min="0" value="0">
+    </div>
+  </div>
+
+  <!-- 4. DEDUCTIONS DU REVENU -->
+  <div class="card">
+    <div class="card-title"><span class="icon">4</span> Déductions du revenu imposable</div>
+
+    <div class="toggle-section" onclick="toggleSection('per')">
+      <div class="toggle" id="perToggle"></div>
+      <span class="toggle-label">PER — Plan d'Épargne Retraite</span>
+    </div>
+    <div class="collapsible" id="perFields">
+      <div class="form-group">
+        <label for="perMontant">Versements volontaires sur PER en 2025 <span class="hint">(déductibles du revenu global)</span></label>
+        <input type="number" id="perMontant" placeholder="Ex : 4 000" step="1" min="0">
+      </div>
+      <div class="info-box orange">
+        Plafond de déduction : 10% des revenus nets d'activité de N-1, dans la limite de 37 094 € (2025). Minimum : 4 636 €.
+      </div>
+    </div>
+
+    <div class="toggle-section" onclick="toggleSection('pension')">
+      <div class="toggle" id="pensionToggle"></div>
+      <span class="toggle-label">Pension alimentaire versée</span>
+    </div>
+    <div class="collapsible" id="pensionFields">
+      <div class="form-group">
+        <label for="pensionMontant">Pension alimentaire versée en 2025 <span class="hint">(enfant majeur : max 6 674 € par enfant)</span></label>
+        <input type="number" id="pensionMontant" placeholder="Ex : 6 000" step="1" min="0">
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. CREDITS & REDUCTIONS -->
+  <div class="card">
+    <div class="card-title"><span class="icon">5</span> Réductions et crédits d'impôt</div>
+
+    <div class="toggle-section" onclick="toggleSection('domicile')">
+      <div class="toggle" id="domicileToggle"></div>
+      <span class="toggle-label">Emploi à domicile (femme de ménage, etc.)</span>
+    </div>
+    <div class="collapsible" id="domicileFields">
+      <div class="form-group">
+        <label for="domicileMontant">Dépenses annuelles <span class="hint">(salaires + charges)</span></label>
+        <input type="number" id="domicileMontant" placeholder="Ex : 6 000" step="1" min="0">
+      </div>
+      <div class="info-box blue">
+        Crédit d'impôt de <strong>50%</strong> des dépenses, plafond de 12 000 € (+ 1 500 € par enfant à charge, max 15 000 €).
+      </div>
+    </div>
+
+    <div class="toggle-section" onclick="toggleSection('garde')">
+      <div class="toggle" id="gardeToggle"></div>
+      <span class="toggle-label">Frais de garde d'enfants de moins de 6 ans</span>
+    </div>
+    <div class="collapsible" id="gardeFields">
+      <div class="form-group">
+        <label for="gardeMontant">Frais de garde annuels <span class="hint">(crèche, assistante maternelle, etc.)</span></label>
+        <input type="number" id="gardeMontant" placeholder="Ex : 3 000" step="1" min="0">
+      </div>
+      <div class="form-group">
+        <label for="gardeNbEnfants">Nombre d'enfants < 6 ans gardés</label>
+        <select id="gardeNbEnfants">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+      <div class="info-box blue">
+        Crédit d'impôt de <strong>50%</strong>, plafonné à 3 500 € de dépenses par enfant (soit max 1 750 € de crédit par enfant).
+      </div>
+    </div>
+
+    <div class="toggle-section" onclick="toggleSection('dons')">
+      <div class="toggle" id="donsToggle"></div>
+      <span class="toggle-label">Dons aux associations / organismes</span>
+    </div>
+    <div class="collapsible" id="donsFields">
+      <div class="form-group">
+        <label for="dons66">Dons ouvrant droit à réduction de 66% <span class="hint">(associations d'intérêt général)</span></label>
+        <input type="number" id="dons66" placeholder="Ex : 500" step="1" min="0">
+      </div>
+      <div class="form-group">
+        <label for="dons75">Dons ouvrant droit à réduction de 75% <span class="hint">(aide aux personnes en difficulté, max 1 000 €)</span></label>
+        <input type="number" id="dons75" placeholder="Ex : 200" step="1" min="0">
+      </div>
+      <div class="info-box blue">
+        Réduction de <strong>66%</strong> dans la limite de 20% du revenu imposable. Réduction de <strong>75%</strong> plafonnée à 1 000 € de dons.
+      </div>
+    </div>
+  </div>
+
+  <button class="btn" onclick="calculer()">Calculer le rattrapage</button>
+
+  <!-- RÉSULTATS -->
+  <div class="results" id="results">
+
+    <div class="card">
+      <div class="card-title">Détail du calcul par tranche</div>
+      <div id="partsResultDisplay" class="parts-detail" style="margin-bottom:8px;"></div>
+      <table class="bareme-table">
+        <thead>
+          <tr><th>Tranche (par part)</th><th>Taux</th><th>Impôt</th></tr>
+        </thead>
+        <tbody id="baremeBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Synthèse complète</div>
+      <div id="detailBreakdown"></div>
+      <div class="result-main" id="resultMain">
+        <div class="result-label" id="resultLabel"></div>
+        <div class="result-amount" id="resultAmount"></div>
+        <div class="result-monthly" id="resultMonthly"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  Simulateur indicatif à des fins de provisionnement — Ne se substitue pas à la déclaration officielle sur impots.gouv.fr<br>
+  Barème et seuils 2025 (revenus 2025, déclarés en 2026)
+</footer>
+
+<script>
+// ═══════════════════════════════════════════
+// CONSTANTES FISCALES 2025
+// ═══════════════════════════════════════════
+const TRANCHES = [
+  { min: 0,      max: 11600,    taux: 0    },
+  { min: 11601,  max: 29579,    taux: 0.11 },
+  { min: 29580,  max: 84577,    taux: 0.30 },
+  { min: 84578,  max: 181917,   taux: 0.41 },
+  { min: 181918, max: Infinity,  taux: 0.45 }
+];
+
+const ABATTEMENT_TAUX = 0.10;
+const ABATTEMENT_PLANCHER = 504;
+const ABATTEMENT_PLAFOND = 14426;
+
+const PLAFOND_QF = 1791;  // par demi-part supplémentaire
+
+// Décote 2025 (estimations revalorisées)
+const DECOTE_SEUIL_SEUL = 1965;
+const DECOTE_CONST_SEUL = 889;
+const DECOTE_SEUIL_COUPLE = 3248;
+const DECOTE_CONST_COUPLE = 1470;
+const DECOTE_COEFF = 0.4525;
+
+// Crédits d'impôt
+const PLAFOND_DOMICILE_BASE = 12000;
+const PLAFOND_DOMICILE_MAJORATION_ENFANT = 1500;
+const PLAFOND_DOMICILE_MAX = 15000;
+const PLAFOND_GARDE_PAR_ENFANT = 3500;
+const PLAFOND_DONS_75 = 1000;
+
+// PER
+const PER_PLAFOND_MAX = 37094;
+const PER_PLANCHER = 4636;
+
+// ═══════════════════════════════════════════
+// TOGGLES
+// ═══════════════════════════════════════════
+const sections = { per: false, pension: false, domicile: false, garde: false, dons: false };
+
+function toggleSection(name) {
+  sections[name] = !sections[name];
+  document.getElementById(name + 'Toggle').classList.toggle('active', sections[name]);
+  document.getElementById(name + 'Fields').classList.toggle('visible', sections[name]);
+}
+
+// ═══════════════════════════════════════════
+// SITUATION CHANGE
+// ═══════════════════════════════════════════
+function onSituationChange() {
+  const sit = document.querySelector('input[name="situation"]:checked').value;
+  const isCouple = (sit === 'marie');
+  document.getElementById('conjointFields').classList.toggle('visible', isCouple);
+  updatePartsDisplay();
+}
+
+function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+function getNbParts() {
+  const sit = document.querySelector('input[name="situation"]:checked').value;
+  const nbEnfants = parseInt(document.getElementById('nbEnfants').value) || 0;
+  const nbAlternee = Math.min(parseInt(document.getElementById('nbEnfantsAlternee').value) || 0, nbEnfants);
+  const nbPlein = nbEnfants - nbAlternee;
+
+  // Parts de base
+  let parts = (sit === 'marie') ? 2 : 1;
+
+  // Veuf avec enfants : garde les 2 parts
+  if (sit === 'veuf' && nbEnfants > 0) parts = 2;
+
+  // Parent isolé (célibataire/divorcé) avec enfants : +0.5 part bonus
+  if ((sit === 'celibataire' || sit === 'divorce') && nbEnfants > 0) parts += 0.5;
+
+  // Enfants à charge complète
+  for (let i = 0; i < nbPlein; i++) {
+    parts += (i < 2) ? 0.5 : 1; // 0.5 pour les 2 premiers, 1 à partir du 3e
+  }
+
+  // Enfants en garde alternée (moitié des parts)
+  for (let i = nbPlein; i < nbPlein + nbAlternee; i++) {
+    const partEnfant = (i < 2) ? 0.5 : 1;
+    parts += partEnfant / 2;
+  }
+
+  return parts;
+}
+
+function updatePartsDisplay() {
+  const parts = getNbParts();
+  const label = parts <= 1 ? 'part fiscale' : 'parts fiscales';
+  document.getElementById('partsDisplay').textContent = parts + ' ' + label;
+}
+
+// ═══════════════════════════════════════════
+// FORMATAGE
+// ═══════════════════════════════════════════
+function fmt(n) {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency', currency: 'EUR',
+    minimumFractionDigits: 0, maximumFractionDigits: 0
+  }).format(n);
+}
+
+// ═══════════════════════════════════════════
+// CALCUL ABATTEMENT 10%
+// ═══════════════════════════════════════════
+function calcAbattement(revenu) {
+  if (revenu <= 0) return 0;
+  let ab = Math.round(revenu * ABATTEMENT_TAUX);
+  ab = Math.max(ab, ABATTEMENT_PLANCHER);
+  ab = Math.min(ab, ABATTEMENT_PLAFOND);
+  return ab;
+}
+
+// ═══════════════════════════════════════════
+// CALCUL IMPÔT PAR TRANCHE (sur 1 part)
+// ═══════════════════════════════════════════
+function calcImpotParTranche(revenuParPart) {
+  let total = 0;
+  const details = [];
+  for (const tr of TRANCHES) {
+    if (revenuParPart < tr.min) {
+      details.push({ ...tr, assiette: 0, impot: 0, active: false });
+      continue;
+    }
+    const borneHaute = tr.max === Infinity ? revenuParPart : Math.min(revenuParPart, tr.max);
+    const assiette = borneHaute - tr.min + 1;
+    const impot = assiette * tr.taux;
+    details.push({ ...tr, assiette, impot, active: true });
+    total += impot;
+    if (revenuParPart <= tr.max) break;
+  }
+  return { totalParPart: total, details };
+}
+
+// ═══════════════════════════════════════════
+// PLAFONNEMENT DU QUOTIENT FAMILIAL
+// ═══════════════════════════════════════════
+function calcPlafonnementQF(revenuImposable, parts, impotAvecQF) {
+  const sit = document.querySelector('input[name="situation"]:checked').value;
+  const partsBase = (sit === 'marie') ? 2 : 1;
+  const demiPartsSupp = (parts - partsBase) * 2; // nombre de demi-parts supplémentaires
+
+  if (demiPartsSupp <= 0) return impotAvecQF;
+
+  // Impôt sans QF (avec parts de base uniquement)
+  const revParPartBase = Math.floor(revenuImposable / partsBase);
+  const { totalParPart: impotParPartBase } = calcImpotParTranche(revParPartBase);
+  const impotSansQF = Math.round(impotParPartBase * partsBase);
+
+  // Avantage max autorisé
+  const avantageMax = Math.round(demiPartsSupp * PLAFOND_QF);
+
+  // Avantage réel
+  const avantageReel = impotSansQF - impotAvecQF;
+
+  if (avantageReel > avantageMax) {
+    return impotSansQF - avantageMax;
+  }
+  return impotAvecQF;
+}
+
+// ═══════════════════════════════════════════
+// DECOTE
+// ═══════════════════════════════════════════
+function calcDecote(impotBrut, isCouple) {
+  const seuil = isCouple ? DECOTE_SEUIL_COUPLE : DECOTE_SEUIL_SEUL;
+  const constante = isCouple ? DECOTE_CONST_COUPLE : DECOTE_CONST_SEUL;
+
+  if (impotBrut >= seuil) return 0;
+  const decote = Math.round(constante - DECOTE_COEFF * impotBrut);
+  return Math.max(0, Math.min(decote, impotBrut));
+}
+
+// ═══════════════════════════════════════════
+// CALCUL PRINCIPAL
+// ═══════════════════════════════════════════
+function calculer() {
+  const sit = document.querySelector('input[name="situation"]:checked').value;
+  const isCouple = (sit === 'marie');
+  const nbEnfants = parseInt(document.getElementById('nbEnfants').value) || 0;
+  const parts = getNbParts();
+
+  // ── Revenus ──
+  const revenu1Brut = getVal('revenu1');
+  const revenu2Brut = isCouple ? getVal('revenu2') : 0;
+
+  if (revenu1Brut <= 0) {
+    alert('Veuillez renseigner votre revenu net fiscal.');
+    return;
+  }
+
+  // Abattement 10% par personne
+  const abattement1 = calcAbattement(revenu1Brut);
+  const abattement2 = isCouple ? calcAbattement(revenu2Brut) : 0;
+  const totalAbattement = abattement1 + abattement2;
+
+  let revenuApresAbattement = (revenu1Brut - abattement1) + (revenu2Brut - abattement2);
+
+  // ── Déductions ──
+  let totalDeductions = 0;
+  let detailDeductions = [];
+
+  if (sections.per) {
+    const perBrut = getVal('perMontant');
+    const perPlafond = Math.min(PER_PLAFOND_MAX, Math.max(PER_PLANCHER, Math.round((revenu1Brut + revenu2Brut) * 0.10)));
+    const per = Math.min(perBrut, perPlafond);
+    if (per > 0) {
+      totalDeductions += per;
+      detailDeductions.push({ label: 'PER (déduction)', montant: per });
+    }
+  }
+
+  if (sections.pension) {
+    const pension = getVal('pensionMontant');
+    if (pension > 0) {
+      totalDeductions += pension;
+      detailDeductions.push({ label: 'Pension alimentaire versée', montant: pension });
+    }
+  }
+
+  const revenuImposable = Math.max(0, revenuApresAbattement - totalDeductions);
+
+  // ── Quotient familial ──
+  const revenuParPart = Math.floor(revenuImposable / parts);
+  const { totalParPart, details: trancheDetails } = calcImpotParTranche(revenuParPart);
+  let impotBrut = Math.round(totalParPart * parts);
+
+  // ── Plafonnement QF ──
+  const impotApresPlafQF = calcPlafonnementQF(revenuImposable, parts, impotBrut);
+  const plafonnementApplique = impotApresPlafQF > impotBrut;
+  impotBrut = impotApresPlafQF;
+
+  // ── Décote ──
+  const decote = calcDecote(impotBrut, isCouple);
+  const impotApresDecote = impotBrut - decote;
+
+  // ── Crédits & Réductions d'impôt ──
+  let totalCredits = 0;
+  let totalReductions = 0;
+  let detailCreditsReductions = [];
+
+  // Emploi à domicile (crédit)
+  if (sections.domicile) {
+    const depenses = getVal('domicileMontant');
+    const plafondDom = Math.min(PLAFOND_DOMICILE_BASE + nbEnfants * PLAFOND_DOMICILE_MAJORATION_ENFANT, PLAFOND_DOMICILE_MAX);
+    const depensesPlaf = Math.min(depenses, plafondDom);
+    const credit = Math.round(depensesPlaf * 0.50);
+    if (credit > 0) {
+      totalCredits += credit;
+      detailCreditsReductions.push({ label: `Emploi à domicile (50% de ${fmt(depensesPlaf)})`, montant: credit, type: 'credit' });
+    }
+  }
+
+  // Frais de garde (crédit)
+  if (sections.garde) {
+    const fraisGarde = getVal('gardeMontant');
+    const nbGarde = parseInt(document.getElementById('gardeNbEnfants').value) || 1;
+    const plafondGarde = nbGarde * PLAFOND_GARDE_PAR_ENFANT;
+    const fraisPlaf = Math.min(fraisGarde, plafondGarde);
+    const credit = Math.round(fraisPlaf * 0.50);
+    if (credit > 0) {
+      totalCredits += credit;
+      detailCreditsReductions.push({ label: `Frais de garde (50% de ${fmt(fraisPlaf)})`, montant: credit, type: 'credit' });
+    }
+  }
+
+  // Dons (réduction)
+  if (sections.dons) {
+    const dons75Brut = getVal('dons75');
+    const dons75 = Math.min(dons75Brut, PLAFOND_DONS_75);
+    const reduction75 = Math.round(dons75 * 0.75);
+
+    const dons66Brut = getVal('dons66');
+    const plafondDons66 = Math.round(revenuImposable * 0.20);
+    const dons66 = Math.min(dons66Brut, plafondDons66);
+    const reduction66 = Math.round(dons66 * 0.66);
+
+    if (reduction75 > 0) {
+      totalReductions += reduction75;
+      detailCreditsReductions.push({ label: `Dons aide aux personnes (75% de ${fmt(dons75)})`, montant: reduction75, type: 'reduction' });
+    }
+    if (reduction66 > 0) {
+      totalReductions += reduction66;
+      detailCreditsReductions.push({ label: `Dons associations (66% de ${fmt(dons66)})`, montant: reduction66, type: 'reduction' });
+    }
+  }
+
+  // Impôt après réductions (les réductions ne peuvent pas créer de crédit)
+  const impotApresReductions = Math.max(0, impotApresDecote - totalReductions);
+
+  // Impôt net (après crédits, peut être négatif = remboursement)
+  const impotNet = impotApresReductions - totalCredits;
+
+  // ── Prélèvements déjà effectués ──
+  const preleve = getVal('preleve');
+  const avanceCredits = getVal('avanceCredits');
+  const totalDejaVerse = preleve + avanceCredits;
+
+  // ── Rattrapage ──
+  const rattrapage = impotNet - totalDejaVerse;
+
+  // ═══════════════════════════════════════════
+  // AFFICHAGE
+  // ═══════════════════════════════════════════
+
+  // Tableau des tranches
+  const partsLabel = parts <= 1 ? 'part' : 'parts';
+  document.getElementById('partsResultDisplay').textContent =
+    `${parts} ${partsLabel} — Revenu par part : ${fmt(revenuParPart)}`;
+
+  const baremeBody = document.getElementById('baremeBody');
+  baremeBody.innerHTML = '';
+  for (const d of trancheDetails) {
+    const tr = document.createElement('tr');
+    if (d.active) tr.classList.add('active-tranche');
+    const maxLabel = d.max === Infinity ? '+' : fmt(d.max);
+    tr.innerHTML = `
+      <td>${d.min === 0 ? 'Jusqu\'à ' + fmt(d.max) : (d.max === Infinity ? 'Plus de ' + fmt(d.min) : 'De ' + fmt(d.min) + ' à ' + maxLabel)}</td>
+      <td>${(d.taux * 100).toFixed(0)} %</td>
+      <td>${d.active ? fmt(Math.round(d.impot * parts)) : '—'}</td>
+    `;
+    baremeBody.appendChild(tr);
+  }
+
+  // Synthèse détaillée
+  const bd = document.getElementById('detailBreakdown');
+  let html = '';
+
+  const statut = document.querySelector('input[name="statut"]:checked').value === 'cadre' ? 'Cadre' : 'Non-cadre';
+  const sitLabels = { celibataire: 'Célibataire', marie: 'Marié(e) / Pacsé(e)', divorce: 'Divorcé(e)', veuf: 'Veuf(ve)' };
+
+  html += row('Situation', sitLabels[sit] + ' — ' + statut);
+  html += row('Revenu(s) net fiscal déclaré(s)', fmt(revenu1Brut + revenu2Brut));
+  html += row('Abattement forfaitaire 10%', '- ' + fmt(totalAbattement), 'var(--green)');
+
+  if (totalDeductions > 0) {
+    for (const d of detailDeductions) {
+      html += row(d.label, '- ' + fmt(d.montant), 'var(--green)');
+    }
+  }
+
+  html += rowSubtotal('Revenu net imposable', fmt(revenuImposable));
+  html += row(`Impôt brut (${parts} ${partsLabel})`, fmt(impotBrut));
+
+  if (plafonnementApplique) {
+    html += row('Plafonnement du quotient familial', 'appliqué', 'var(--orange)');
+  }
+
+  if (decote > 0) {
+    html += row('Décote', '- ' + fmt(decote), 'var(--green)');
+  }
+
+  if (detailCreditsReductions.length > 0) {
+    for (const cr of detailCreditsReductions) {
+      const typeLabel = cr.type === 'credit' ? '(crédit)' : '(réduction)';
+      html += row(`${cr.label} ${typeLabel}`, '- ' + fmt(cr.montant), 'var(--green)');
+    }
+  }
+
+  html += rowSubtotal('Impôt net', fmt(Math.max(0, impotNet)));
+
+  if (totalCredits > 0 && impotNet < 0) {
+    html += row('Crédit d\'impôt restituable', fmt(Math.abs(impotNet)), 'var(--green)');
+  }
+
+  const tauxMoyen = (revenu1Brut + revenu2Brut) > 0
+    ? (Math.max(0, impotNet) / (revenu1Brut + revenu2Brut) * 100).toFixed(1)
+    : '0.0';
+  html += row('Taux moyen d\'imposition', tauxMoyen + ' %');
+
+  html += '<div style="margin-top:12px; border-top: 2px solid var(--border); padding-top:12px;">';
+  html += row('Prélevé à la source', fmt(preleve));
+  if (avanceCredits > 0) {
+    html += row('Avance crédits d\'impôt (janvier)', fmt(avanceCredits));
+  }
+  html += rowSubtotal('Total déjà versé / reçu', fmt(totalDejaVerse));
+  html += '</div>';
+
+  bd.innerHTML = html;
+
+  // Résultat principal
+  const mainDiv = document.getElementById('resultMain');
+  const labelEl = document.getElementById('resultLabel');
+  const amountEl = document.getElementById('resultAmount');
+  const monthlyEl = document.getElementById('resultMonthly');
+  mainDiv.classList.remove('refund', 'due');
+
+  if (rattrapage > 0) {
+    mainDiv.classList.add('due');
+    labelEl.textContent = 'Reste à payer (rattrapage)';
+    amountEl.textContent = fmt(rattrapage);
+    if (rattrapage > 300) {
+      monthlyEl.textContent = `Étalé sur 4 mois : ~${fmt(Math.round(rattrapage / 4))} / mois (sept.→déc.)`;
+    } else {
+      monthlyEl.textContent = 'Prélevé en une fois en septembre';
+    }
+  } else if (rattrapage < 0) {
+    mainDiv.classList.add('refund');
+    labelEl.textContent = 'Remboursement attendu';
+    amountEl.textContent = fmt(Math.abs(rattrapage));
+    monthlyEl.textContent = 'Versé sur votre compte en juillet/août';
+  } else {
+    mainDiv.classList.add('refund');
+    labelEl.textContent = 'Aucun rattrapage';
+    amountEl.textContent = '0 €';
+    monthlyEl.textContent = '';
+  }
+
+  document.getElementById('results').classList.add('visible');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ═══════════════════════════════════════════
+// HELPERS HTML
+// ═══════════════════════════════════════════
+function row(label, value, color) {
+  const style = color ? ` style="color:${color}"` : '';
+  return `<div class="result-row"><span class="lbl">${label}</span><span class="val"${style}>${value}</span></div>`;
+}
+function rowSubtotal(label, value) {
+  return `<div class="result-row subtotal"><span class="lbl">${label}</span><span class="val">${value}</span></div>`;
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => { updatePartsDisplay(); });
+document.addEventListener('keydown', e => { if (e.key === 'Enter') calculer(); });
+</script>
+
+</body>
+</html>
